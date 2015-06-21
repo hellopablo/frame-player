@@ -1,0 +1,20 @@
+{
+  "name": "frameplayer",
+  "version": "0.0.0",
+  "authors": [
+    "Pablo de la Peña <p@shedcollective.org>"
+  ],
+  "description": "A simple JavaScript player for playing frame-based animations.",
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "jquery": "2.*",
+  },
+  "homepage": "hellopablo.github.io/frameplayer"
+}
