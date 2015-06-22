@@ -45,3 +45,7 @@ Install the dev dependancies
 Calling `grunt` in the project root will start the watcher causing changes to the JS to be compiled automatically.
 
     grunt
+
+## RoadMap
+
+- Add a jQuery wrapper

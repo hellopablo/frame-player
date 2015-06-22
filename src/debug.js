@@ -75,10 +75,15 @@ window.frameplayer.debug = {
 
             for (var i = methods.length - 1; i >= 0; i--) {
                 if (methods[i] === method && typeof console[methods[i]] === 'function') {
+
                     var args = [caller];
-                    for (var x = 0; x < items.length; x++) {
-                        args.push(items[x]);
+
+                    if (typeof items !== 'undefined') {
+                        for (var x = 0; x < items.length; x++) {
+                            args.push(items[x]);
+                        }
                     }
+
                     console[methods[i]].apply(console, args);
                     break;
                 }
