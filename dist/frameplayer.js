@@ -213,6 +213,8 @@ window.frameplayer.player = function(options) {
         bufferSize: "30%",
         loop: true,
         debug: false,
+        autoPlay: false,
+        autoLoad: false,
         frames: [],
         //  Events
         onReady: function() {},
@@ -322,6 +324,12 @@ window.frameplayer.player = function(options) {
             base.renderUrl(base.options.coverImg);
         }
         base.options.onReady.call(base, base.currentFrame);
+        // --------------------------------------------------------------------------
+        if (base.frames.length && base.options.autoPlay) {
+            base.play();
+        } else if (base.frames.length && base.options.autoLoad) {
+            base.load();
+        }
         // --------------------------------------------------------------------------
         return base;
     };
