@@ -317,7 +317,12 @@ window.frameplayer.player = function(options) {
 
             base.canvas.css('background-image', 'url(' + url + ')');
 
+        } else if (base.options.renderMode === 'img') {
+
+            base.canvas.html('<img src="' + url + '">');
+
         } else {
+
             base.error('Invalid Render Mode (' + base.options.renderMode + ')');
         }
 
@@ -737,11 +742,30 @@ window.frameplayer.player = function(options) {
 
             base.currentFrame = null;
             base.lastFrameLoaded = null;
+            base.options.coverImg = null;
             base.frames = [];
+
+            base.scrubber.find('.current').width('0%');
+            base.scrubber.find('.loaded').width('0%');
+
+            if (base.options.renderMode === 'background') {
+
+                base.canvas.removeAttr('style');
+
+            } else if (base.options.renderMode === 'img') {
+
+                base.canvas.empty();
+            }
 
         } else {
 
             base.currentFrame = 0;
+
+            if (!base.options.coverImg) {
+                base.goToFrame(0);
+            } else {
+                base.renderUrl(base.options.coverImg);
+            }
         }
 
         base.options.onReset.call(base);
