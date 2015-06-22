@@ -135,6 +135,7 @@ window.frameplayer.frame = function(frameUrl) {
         var deferred = new $.Deferred();
         var img = new Image();
         img.onload = function() {
+            base.loaded = true;
             deferred.resolve();
         };
         img.src = base.url;
@@ -211,9 +212,7 @@ window.frameplayer.player = function(options) {
         renderMode: "background",
         bufferSize: "30%",
         loop: true,
-        debug: {
-            enabled: false
-        },
+        debug: false,
         frames: [],
         //  Events
         onReady: function() {},
@@ -293,7 +292,7 @@ window.frameplayer.player = function(options) {
         //  Merge passed options with the defaults
         base.options = $.extend(true, base.options, options);
         //  Are we turning debugging on?
-        if (base.options.debug.enabled) {
+        if (base.options.debug) {
             $FP.debug.enabled = true;
         }
         base.log("Constructing");
@@ -487,39 +486,36 @@ window.frameplayer.player = function(options) {
                 base.currentFrame = 0;
             }
             var frameNumber = base.currentFrame;
-            //  Set the frame, checking if we need to buffer as we go
-            if (base.requiresBuffer()) {
-                //  Only begin buffering if we aren't already buffering
-                if (base.playerState !== "BUFFERING") {
-                    base.buffer();
-                }
-            } else {
-                base.options.onEnterFrame.call(base, base.currentFrame);
-                base.renderFrame(base.currentFrame);
-                //  Update the scrubber to show which frame we're on
-                var totalFrames = base.frames.length - 1;
-                var percentagePlayed = base.currentFrame / totalFrames * 100;
-                base.scrubber.find(".current").width(percentagePlayed + "%");
-                //  Trigger the next frame
-                var frameDelay = 1e3 / base.options.frameRate;
-                setTimeout(function() {
-                    base.options.onExitFrame.call(base, base.currentFrame);
-                    if (typeof base.frames[base.currentFrame + 1] === "object") {
-                        //  More frames, continue
-                        base.currentFrame++;
+            base.options.onEnterFrame.call(base, base.currentFrame);
+            base.renderFrame(base.currentFrame);
+            //  Update the scrubber to show which frame we're on
+            var totalFrames = base.frames.length - 1;
+            var percentagePlayed = base.currentFrame / totalFrames * 100;
+            base.scrubber.find(".current").width(percentagePlayed + "%");
+            //  Trigger the next frame
+            var frameDelay = 1e3 / base.options.frameRate;
+            setTimeout(function() {
+                base.options.onExitFrame.call(base, base.currentFrame);
+                if (typeof base.frames[base.currentFrame + 1] === "object") {
+                    //  More frames, continue
+                    base.currentFrame++;
+                    //  But is the next frame loaded? If not then begin buffering
+                    if (!base.frames[base.currentFrame].isLoaded()) {
+                        base.buffer();
+                    } else {
+                        base.doPlay();
+                    }
+                } else {
+                    //  No more frames
+                    base.currentFrame = 0;
+                    if (base.options.loop) {
+                        base.options.onLoop.call(base);
                         base.doPlay();
                     } else {
-                        //  No more frames
-                        base.currentFrame = 0;
-                        if (base.options.loop) {
-                            base.options.onLoop.call(base);
-                            base.doPlay();
-                        } else {
-                            base.stop();
-                        }
+                        base.stop();
                     }
-                }, frameDelay);
-            }
+                }
+            }, frameDelay);
         }
         return base;
     };
@@ -554,10 +550,9 @@ window.frameplayer.player = function(options) {
                 base.log("Buffer full");
                 //  Set the player state
                 base.playerState = "PLAYING";
-                //  Resume playback
-                base.doPlay();
                 //  Buffer has filled up, continue playback
                 base.bufferStop();
+                base.doPlay();
             }
         } else {
             base.bufferStop();

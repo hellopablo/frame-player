@@ -63,6 +63,7 @@ window.frameplayer.frame = function(frameUrl) {
 
         img.onload = function() {
 
+            base.loaded = true;
             deferred.resolve();
         };
 

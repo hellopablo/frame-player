@@ -34,9 +34,7 @@ window.frameplayer.player = function(options) {
         'renderMode': 'background',
         'bufferSize': '30%',
         'loop': true,
-        'debug': {
-            'enabled': false
-        },
+        'debug': false,
         'frames': [],
 
         //  Events
@@ -139,7 +137,7 @@ window.frameplayer.player = function(options) {
         base.options = $.extend(true, base.options, options);
 
         //  Are we turning debugging on?
-        if (base.options.debug.enabled) {
+        if (base.options.debug) {
             $FP.debug.enabled = true;
         }
 
@@ -409,55 +407,53 @@ window.frameplayer.player = function(options) {
 
             var frameNumber = base.currentFrame;
 
-            //  Set the frame, checking if we need to buffer as we go
-            if (base.requiresBuffer()) {
+            base.options.onEnterFrame.call(base, base.currentFrame);
+            base.renderFrame(base.currentFrame);
 
-                //  Only begin buffering if we aren't already buffering
-                if (base.playerState !== 'BUFFERING') {
-                    base.buffer();
-                }
+            //  Update the scrubber to show which frame we're on
+            var totalFrames      = base.frames.length-1;
+            var percentagePlayed = (base.currentFrame / totalFrames)*100;
 
-            } else {
+            base.scrubber.find('.current').width(percentagePlayed + '%');
 
-                base.options.onEnterFrame.call(base, base.currentFrame);
-                base.renderFrame(base.currentFrame);
+            //  Trigger the next frame
+            var frameDelay = 1000/base.options.frameRate;
 
-                //  Update the scrubber to show which frame we're on
-                var totalFrames      = base.frames.length-1;
-                var percentagePlayed = (base.currentFrame / totalFrames)*100;
+            setTimeout(function() {
 
-                base.scrubber.find('.current').width(percentagePlayed + '%');
+                base.options.onExitFrame.call(base, base.currentFrame);
 
-                //  Trigger the next frame
-                var frameDelay = 1000/base.options.frameRate;
+                if (typeof base.frames[base.currentFrame+1] === 'object') {
 
-                setTimeout(function() {
+                    //  More frames, continue
+                    base.currentFrame++;
 
-                    base.options.onExitFrame.call(base, base.currentFrame);
+                    //  But is the next frame loaded? If not then begin buffering
+                    if (!base.frames[base.currentFrame].isLoaded()) {
 
-                    if (typeof base.frames[base.currentFrame+1] === 'object') {
+                        base.buffer();
 
-                        //  More frames, continue
-                        base.currentFrame++;
+                    } else {
+
+                        base.doPlay();
+                    }
+
+                } else {
+
+                    //  No more frames
+                    base.currentFrame = 0;
+                    if (base.options.loop) {
+
+                        base.options.onLoop.call(base);
                         base.doPlay();
 
                     } else {
 
-                        //  No more frames
-                        base.currentFrame = 0;
-                        if (base.options.loop) {
-
-                            base.options.onLoop.call(base);
-                            base.doPlay();
-
-                        } else {
-
-                            base.stop();
-                        }
+                        base.stop();
                     }
+                }
 
-                }, frameDelay);
-            }
+            }, frameDelay);
         }
 
         return base;
@@ -509,11 +505,9 @@ window.frameplayer.player = function(options) {
                 //  Set the player state
                 base.playerState = 'PLAYING';
 
-                //  Resume playback
-                base.doPlay();
-
                 //  Buffer has filled up, continue playback
                 base.bufferStop();
+                base.doPlay();
             }
 
         } else {
