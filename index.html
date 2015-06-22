@@ -1,93 +1,410 @@
 <!DOCTYPE html>
-<!--[if lt IE 7 ]><html class="ie ie6" lang="en"> <![endif]-->
-<!--[if IE 7 ]><html class="ie ie7" lang="en"> <![endif]-->
-<!--[if IE 8 ]><html class="ie ie8" lang="en"> <![endif]-->
-<!--[if (gte IE 9)|!(IE)]><!--><html lang="en"> <!--<![endif]-->
-    <head>
-        <title>FramePlayer - A simple JavaScript player for playing frame-based animations. </title>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta charset="utf-8">
-        <style type="text/css">
+<html>
+<head>
+    <title>FramePlayer: Demo</title>
+    <link rel="shortcut icon" href="assets/img/icon.png">
+    <style type="text/css">
+        /* http://meyerweb.com/eric/tools/css/reset/
+           v2.0 | 20110126
+           License: none (public domain)
+        */
 
-            html,
-            body {
-                -ms-text-size-adjust: 100%;
-                -webkit-text-size-adjust: 100%;
-                color: #333;
-                overflow: hidden;
-                font-family: "Helvetica Neue", Helvetica, "Segoe UI", Arial, freesans, sans-serif;
-                font-size: 16px;
-                line-height: 1.6em;
-            }
+        html, body, div, span, applet, object, iframe,
+        h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+        a, abbr, acronym, address, big, cite, code,
+        del, dfn, em, img, ins, kbd, q, s, samp,
+        small, strike, strong, sub, sup, tt, var,
+        b, u, i, center,
+        dl, dt, dd, ol, ul, li,
+        fieldset, form, label, legend,
+        table, caption, tbody, tfoot, thead, tr, th, td,
+        article, aside, canvas, details, embed,
+        figure, figcaption, footer, header, hgroup,
+        menu, nav, output, ruby, section, summary,
+        time, mark, audio, video {
+            margin: 0;
+            padding: 0;
+            border: 0;
+            font-size: 100%;
+            font: inherit;
+            vertical-align: baseline;
+        }
+        /* HTML5 display-role reset for older browsers */
+        article, aside, details, figcaption, figure,
+        footer, header, hgroup, menu, nav, section {
+            display: block;
+        }
+        body {
+            line-height: 1;
+        }
+        ol, ul {
+            list-style: none;
+        }
+        blockquote, q {
+            quotes: none;
+        }
+        blockquote:before, blockquote:after,
+        q:before, q:after {
+            content: '';
+            content: none;
+        }
+        table {
+            border-collapse: collapse;
+            border-spacing: 0;
+        }
 
-            #container {
-                word-wrap: break-word;
-                max-width: 600px;
-                min-width: 200px;
-                margin: 0 auto;
-                padding: 30px;
-                text-align: center;
-            }
-
-            h1 {
-                position: relative;
-                margin: 0.67em 0;
-                margin-top: 1em;
-                margin-bottom: 16px;
-                padding-bottom: 0.3em;
-                font-size: 2.25em;
-                font-weight: bold;
-                line-height: 1.2;
-                border-bottom: 1px solid #eee;
-            }
-
-            img {
-                border: 0;
-                max-width: 100%;
-                -moz-box-sizing: border-box;
-                box-sizing: border-box;
-            }
-
-            p {
-                margin-top: 0;
-                margin-bottom: 16px;
-            }
-
-            a {
-                background: transparent;
-                color: #4183C4;
-                text-decoration: none;
-            }
-
-            a:active,
-            a:hover {
-                outline: 0;
-            }
-
-            a:hover,
-            a:focus,
-            a:active {
-                text-decoration: underline;
-            }
-
-        </style>
-    </head>
-    <body>
-        <div id="container">
-            <h1>
-                FramePlayer
-            </h1>
-            <p>
-                A simple JavaScript player for playing frame-based animations.
-            </p>
-            <p>
-                Demo website is @todo.
-            </p>
-            <p>
-                <a href="https://github.com/hellopablo/frameplayer">
-                    GitHub Repo
-                </a>
-            </p>
+        /*
+            Page styles
+         */
+        html,
+        body {
+            font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+            font-weight: 300;
+            font-size: 14px;
+            -webkit-font-smoothing: antialiased;
+            margin: 0;
+            padding: 0;
+        }
+        #intro,
+        #sub-intro,
+        #player,
+        #controls,
+        #meta,
+        #import {
+            border:1px solid #CCC;
+            margin: 1em auto;
+            width: 580px;
+            padding: 10px;
+        }
+        #intro,
+        #sub-intro {
+            text-align: center;
+            border: none;
+            font-size: 2em;
+            font-weight: bold;
+        }
+        #sub-intro {
+            font-size: 1em;
+            font-weight: normal;
+            margin-bottom: 3em;
+            line-height: 1.75em;
+        }
+        #intro img {
+            width: 50px;
+            height: 50px;
+            vertical-align: middle;
+            position: relative;
+            top:-3px;
+            left:-10px;
+        }
+        #intro small {
+            font-weight: normal;
+            color: #CCC;
+        }
+        #player {
+            width: 600px;
+            height: 338px;
+            padding: 0;
+            position: relative;
+            border-radius: 3px;
+            overflow: hidden;
+            box-shadow: 0px 0px 5px rgba(0,0,0,0.3);
+        }
+        #player .canvas {
+            width: 100%;
+            height:100%;
+            background: #B7E1FF;
+            background-size: cover;
+            background-image: url(assets/img/coverImg.png);
+            cursor: pointer;
+        }
+        #player .canvas img {
+            max-width: 100%;
+            max-height: 100%;
+        }
+        #player .scrubber {
+            position: absolute;
+            left: 1em;
+            right: 1em;
+            bottom: 0.8em;
+            height: 0.5em;
+            background: rgba(255, 255, 255, 0.3);
+            border: 1px solid #FFF;
+            border-radius: 0.15em;
+            overflow: hidden;
+            box-shadow: 0px 1px 2px rgba(0,0,0,0.3);
+        }
+        #player .scrubber .loaded,
+        #player .scrubber .current {
+            height: 100%;
+            width: 0;
+            position: absolute;
+            left: 0;
+            top: 0;
+        }
+        #player .scrubber .loaded {
+            background: rgba(255, 255, 255, 0.65);
+        }
+        #player .scrubber .current {
+            background: rgba(255, 255, 255, 1);
+        }
+        #controls {
+            text-align: center;
+        }
+        #data-import {
+            width: 100%;
+            height: 250px;
+            box-sizing: border-box;
+            border: 1px solid #CCC;
+            margin: 1em 0;
+            padding: 1em;
+        }
+        table {
+            width: 100%;
+        }
+        table td {
+            padding: 1em;
+            border-bottom: 1px solid #EFEFEF;
+        }
+        table tr:last-of-type td {
+            border-bottom: none;
+        }
+        table td.label {
+            width: 150px;
+            background: #EFEFEF;
+        }
+    </style>
+</head>
+<body>
+    <div id="intro">
+        <img src="assets/img/icon.png">
+        FramePlayer <small>Demo</small>
+    </div>
+    <div id="sub-intro">
+        <p>
+            Source code and docs available on <a href="http://github.com/hellopablo/frameplayer">GitHub</a>.
+        </p>
+    </div>
+    <div id="player">
+        <div class="canvas"></div>
+        <div class="controls"></div>
+        <div class="scrubber">
+            <div class="loaded"></div>
+            <div class="current"></div>
         </div>
-    </body>
+    </div>
+    <div id="controls">
+        <button class="action" data-action="load">
+            Load Start
+        </button>
+        <button class="action" data-action="loadStop">
+            Load Stop
+        </button>
+        <button class="action" data-action="play">
+            Player Play
+        </button>
+        <button class="action" data-action="stop">
+            Player Stop
+        </button>
+    </div>
+    <div id="meta">
+        <table>
+            <tbody>
+                <tr>
+                    <td class="label">Number of Frames</td>
+                    <td class="value" id="meta-num-frames">
+                        undefined
+                    </td>
+                </tr>
+                <tr>
+                    <td class="label">Current Frame</td>
+                    <td class="value" id="meta-current-frame">
+                        undefined
+                    </td>
+                </tr>
+                <tr>
+                    <td class="label">Loaded Frames</td>
+                    <td class="value" id="meta-loaded-frames">
+                        undefined
+                    </td>
+                </tr>
+                <tr>
+                    <td class="label">Player state</td>
+                    <td class="value" id="meta-player-state">
+                        undefined
+                    </td>
+                </tr>
+                <tr>
+                    <td class="label">Loader state</td>
+                    <td class="value" id="meta-loader-state">
+                        undefined
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div id="import">
+        <p>
+            Presets:
+            <button class="action" data-action="preset" data-source="bigben">Big Ben, London</button>
+            <button class="action" data-action="preset" data-source="londoneye">London Eye, London</button>
+            <button class="action" data-action="preset" data-source="royalmile">Royal Mile, Edinburgh</button>
+            <button class="action" data-action="preset" data-source="eiffletower">Eiffle Tower, Paris</button>
+        </p>
+        <textarea id="data-import" placeholder="Paste a JSON array of URLs here to set them as the frames"></textarea>
+        <button class="action" data-action="import">
+            Import
+        </button>
+    </div>
+    <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+    <script type="text/javascript" src="assets/js/frameplayer.min.js"></script>
+    <script type="text/javascript" src="assets/js/frames.js"></script>
+    <script type="text/javascript">
+
+        var player = new window.frameplayer.player({
+            'domElement': '#player',
+            'coverImg': 'assets/img/coverImg.png',
+            'frames': window.frames.bigben,
+            'onReady': function() {
+
+                window.FP.debug.log('EVENT: onReady');
+                $('#meta-num-frames').text(this.frames.length);
+                $('#meta-player-state').text(this.getPlayerState());
+                $('#meta-loader-state').text(this.getLoaderState());
+            },
+            'onLoadStart': function() {
+                window.FP.debug.log('EVENT: onLoadStart');
+                $('#meta-loader-state').text(this.getLoaderState());
+            },
+            'onLoadStop': function() {
+                window.FP.debug.log('EVENT: onLoadStop');
+                $('#meta-loader-state').text(this.getLoaderState());
+            },
+            'onLoadProgress': function(loadedFrames, totalFrames, percentLoaded) {
+                window.FP.debug.log('EVENT: onLoadProgress', loadedFrames, totalFrames, percentLoaded);
+                $('#meta-loaded-frames').text(loadedFrames + ' / ' + percentLoaded + '%');
+            },
+            'onLoadComplete': function() {
+                window.FP.debug.log('EVENT: onLoadComplete');
+                $('#meta-loader-state').text(this.getLoaderState());
+            },
+            'onPlay': function() {
+
+                window.FP.debug.log('EVENT: onPlay');
+                $('#meta-player-state').text(this.getPlayerState());
+                $('#meta-loader-state').text(this.getLoaderState());
+            },
+            'onBufferStart': function() {
+
+                window.FP.debug.log('EVENT: onBufferStart');
+                $('#meta-player-state').text(this.getPlayerState());
+                $('#meta-loader-state').text(this.getLoaderState());
+            },
+            'onBufferStop': function() {
+
+                window.FP.debug.log('EVENT: onBufferStop');
+                $('#meta-player-state').text(this.getPlayerState());
+                $('#meta-loader-state').text(this.getLoaderState());
+            },
+            'onStop': function() {
+
+                window.FP.debug.log('EVENT: onStop');
+                $('#meta-player-state').text(this.getPlayerState());
+                $('#meta-loader-state').text(this.getLoaderState());
+            },
+            'onEnterFrame': function(frameNumber) {
+
+                window.FP.debug.log('EVENT: onEnterFrame', frameNumber);
+                $('#meta-current-frame').text(this.getCurrentFrame());
+            },
+            'onExitFrame': function(frameNumber) {
+
+                window.FP.debug.log('EVENT: onExitFrame', frameNumber);
+            },
+            'onLoop': function() {
+
+                window.FP.debug.log('EVENT: onLoop');
+            },
+            'onReset': function() {
+
+                window.FP.debug.log('EVENT: onReset');
+            }
+        });
+
+        //  Bind to buttons
+        $('button.action').on('click', function() {
+
+            var action = $(this).data('action');
+
+            switch (action) {
+                case 'load':
+                    player.load();
+                    break;
+
+                case 'loadStop':
+                    player.loadStop();
+                    break;
+
+                case 'play':
+                    player.play();
+                    break;
+
+                case 'stop':
+                    player.stop();
+                    break;
+
+                case 'import':
+                    try {
+
+                        var frames = JSON.parse($('#data-import').val());
+
+                        $('#meta-num-frames').text(player.frames.length);
+                        $('#meta-player-state').text(player.getPlayerState());
+                        $('#meta-loader-state').text(player.getLoaderState());
+
+                        player
+                            .reset(true)
+                            .setFrames(frames)
+                            .play();
+
+                    } catch (e) {
+
+                        alert('Failed to import frames: ' + e.message);
+                    }
+                    break;
+
+                case 'preset':
+
+                    var preset = $(this).data('source');
+                    if (typeof window.frames[preset]) {
+
+                        $('#meta-num-frames').text(player.frames.length);
+                        $('#meta-player-state').text(player.getPlayerState());
+                        $('#meta-loader-state').text(player.getLoaderState());
+
+                        player
+                            .reset(true)
+                            .setFrames(window.frames[preset])
+                            .play();
+
+                    } else {
+
+                        alert('Invalid Preset');
+                    }
+                    break;
+            }
+        });
+
+        //  Bind to canvas
+        $('#player .canvas').on('click', function() {
+
+            if (player.getPlayerState() === 'STOPPED') {
+                player.play();
+            } else {
+                player.stop();
+            }
+        });
+
+    </script>
+</body>
 </html>
