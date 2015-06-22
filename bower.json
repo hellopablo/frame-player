@@ -1,6 +1,6 @@
 {
   "name": "frameplayer",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "authors": [
     "Pablo de la Peña <p@shedcollective.org>"
   ],
@@ -14,7 +14,7 @@
     "tests"
   ],
   "dependencies": {
-    "jquery": "2.*",
+    "jquery": "2.*"
   },
   "homepage": "hellopablo.github.io/frameplayer"
 }
