@@ -138,6 +138,11 @@ window.frameplayer.frame = function(frameUrl) {
             base.loaded = true;
             deferred.resolve();
         };
+        img.onerror = function() {
+            base.error("Failed to load frame; URL: " + base.url);
+            base.loaded = true;
+            deferred.resolve();
+        };
         img.src = base.url;
         return deferred.promise();
     };
@@ -220,14 +225,14 @@ window.frameplayer.player = function(options) {
         onReady: function() {},
         onLoadStart: function() {},
         onLoadStop: function() {},
-        onLoadProgress: function() {},
+        onLoadProgress: function(lastFrameLoaded, totalFrames, percentageLoaded) {},
         onLoadComplete: function() {},
         onPlay: function() {},
         onBufferStart: function() {},
         onBufferStop: function() {},
         onStop: function() {},
-        onEnterFrame: function() {},
-        onExitFrame: function() {},
+        onEnterFrame: function(currentFrame) {},
+        onExitFrame: function(currentFrame) {},
         onLoop: function() {},
         onReset: function() {}
     };
@@ -317,13 +322,13 @@ window.frameplayer.player = function(options) {
         //  Player is ready
         base.ready = true;
         base.playerState = "STOPPED";
-        if (!base.options.coverImg) {
-            base.goToFrame(0);
-        } else {
+        if (base.options.coverImg) {
             base.log("Rendering Cover Image: " + base.options.coverImg);
             base.renderUrl(base.options.coverImg);
+        } else if (frames.length) {
+            base.goToFrame(0);
         }
-        base.options.onReady.call(base, base.currentFrame);
+        base.options.onReady.call(base);
         // --------------------------------------------------------------------------
         if (base.frames.length && base.options.autoPlay) {
             base.play();
@@ -465,7 +470,7 @@ window.frameplayer.player = function(options) {
                 base.log("Playing...");
                 base.playerState = "PLAYING";
                 //  Fire the event
-                base.options.onPlay.call(base, base.currentFrame);
+                base.options.onPlay.call(base);
                 //  If any frames need loaded then continue loading
                 if (base.loaderState === "STOPPED") {
                     base.load();
@@ -538,6 +543,8 @@ window.frameplayer.player = function(options) {
         base.log("Buffering");
         //  Set the player state
         base.playerState = "BUFFERING";
+        //  Update the element's class
+        base.element.addClass("buffering");
         //  Call the buffer event
         base.options.onBufferStart.call(base);
         //  Periodically check the buffer size
@@ -646,8 +653,8 @@ window.frameplayer.player = function(options) {
         var lastFrameLoaded = base.lastFrameLoaded || 0;
         var percentageLoaded = lastFrameLoaded / totalFrames * 100;
         base.scrubber.find(".loaded").width(percentageLoaded + "%");
-        //  Call the onLoadProgress event
-        base.options.onLoadProgress.call(base, lastFrameLoaded, base.frames.length, percentageLoaded);
+        //  Call the onLoadProgress event, the +1 to account for zero-index
+        base.options.onLoadProgress.call(base, lastFrameLoaded + 1, base.frames.length, percentageLoaded);
         return percentageLoaded;
     };
     // --------------------------------------------------------------------------
@@ -660,7 +667,7 @@ window.frameplayer.player = function(options) {
             if (base.playerState !== "STOPPED") {
                 base.log("Stopping playback...");
                 base.playerState = "STOPPED";
-                base.options.onStop.call(base, base.currentFrame);
+                base.options.onStop.call(base);
                 base.loadStop();
             }
         } else {
@@ -675,6 +682,7 @@ window.frameplayer.player = function(options) {
      */
     base.bufferStop = function() {
         base.options.onBufferStop.call(base);
+        base.element.removeClass("buffering");
         return base;
     };
     // --------------------------------------------------------------------------
@@ -713,6 +721,14 @@ window.frameplayer.player = function(options) {
      */
     base.getCurrentFrame = function() {
         return base.currentFrame;
+    };
+    // --------------------------------------------------------------------------
+    /**
+     * Returns the number of frames in the player
+     * @return {Number}
+     */
+    base.getNumFrames = function() {
+        return base.frames.length;
     };
     // --------------------------------------------------------------------------
     /**

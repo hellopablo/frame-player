@@ -4,7 +4,6 @@
 
 A simple JavaScript player for playing frame-based animations. [Demo](http://hellopablo.github.io/frameplayer)
 
-
 ## How to use
 
 ### Basic Usage
@@ -34,15 +33,19 @@ I welcome contirbutions to frameplayer. Fork the repo and submit a pull request.
 
 ### Compiling the JS
 
-I use Grunt to compile everything. Firstly, install `grunt-cli` globally. It's recommended to run the grunt client on a per-project basis, so if you have it installed globally, remove it.
+I use Grunt to compile everything. Firstly, install `grunt-cli` tool globally. It's recommended to run the grunt client on a per-project basis.
 
     npm install -g grunt-cli
 
-Install the dev dependancies
+Install the dev dependancies in your project:
 
-    npm install
+    npm install --dev
 
-Calling `grunt` in the project root will start the watcher causing changes to the JS to be compiled automatically.
+The following Grunt task is available for compiling the JS:
+
+    grunt build
+
+If you want to watch for changes in `src/*.js` files then simply call Grunt with no arguments:
 
     grunt
 

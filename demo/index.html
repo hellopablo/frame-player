@@ -102,6 +102,22 @@
             overflow: hidden;
             box-shadow: 0px 0px 5px rgba(0,0,0,0.3);
         }
+        #player .buffering {
+            display: none;
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height:100%;
+            background-color: rgba(255,255,255,0.7);
+            background-repeat: no-repeat;
+            background-position: center;
+            background-image: url(buffering.gif);
+            background-size: 32px;
+        }
+        #player.buffering .buffering {
+            display: block;
+        }
         #player .canvas {
             width: 100%;
             height:100%;
@@ -174,7 +190,7 @@
     </div>
     <div id="player">
         <div class="canvas"></div>
-        <div class="controls"></div>
+        <div class="buffering"></div>
         <div class="scrubber">
             <div class="loaded"></div>
             <div class="current"></div>
@@ -255,23 +271,27 @@
             'onReady': function() {
 
                 window.FP.debug.log('EVENT: onReady');
-                $('#meta-num-frames').text(this.frames.length);
+                $('#meta-num-frames').text(this.getNumFrames());
                 $('#meta-player-state').text(this.getPlayerState());
                 $('#meta-loader-state').text(this.getLoaderState());
             },
             'onLoadStart': function() {
+
                 window.FP.debug.log('EVENT: onLoadStart');
                 $('#meta-loader-state').text(this.getLoaderState());
             },
             'onLoadStop': function() {
+
                 window.FP.debug.log('EVENT: onLoadStop');
                 $('#meta-loader-state').text(this.getLoaderState());
             },
             'onLoadProgress': function(loadedFrames, totalFrames, percentLoaded) {
+
                 window.FP.debug.log('EVENT: onLoadProgress', loadedFrames, totalFrames, percentLoaded);
                 $('#meta-loaded-frames').text(loadedFrames + ' / ' + percentLoaded + '%');
             },
             'onLoadComplete': function() {
+
                 window.FP.debug.log('EVENT: onLoadComplete');
                 $('#meta-loader-state').text(this.getLoaderState());
             },
