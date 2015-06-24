@@ -33,7 +33,7 @@ window.frameplayer.player = function(options) {
         'coverImg': null,
         'renderMode': 'background',
         'bufferSize': '30%',
-        'loop': true,
+        'loop': false,
         'debug': false,
         'autoPlay': false,
         'autoLoad': false,
@@ -53,6 +53,11 @@ window.frameplayer.player = function(options) {
         'onExitFrame': function(currentFrame) {},
         'onLoop': function() {},
         'onReset': function() {}
+
+        /**
+         * Also possible to specify onEnterFrameX or onExitFrameX, where X is
+         * the frame number.
+         */
     };
 
     // --------------------------------------------------------------------------
@@ -126,6 +131,10 @@ window.frameplayer.player = function(options) {
      * @type {Object}
      */
     base.scrubber = null;
+
+    // --------------------------------------------------------------------------
+
+    base.playerTimeout = null;
 
     // --------------------------------------------------------------------------
 
@@ -374,30 +383,35 @@ window.frameplayer.player = function(options) {
 
             if (base.playerState === 'STOPPED') {
 
-                //  Set the state
-                base.log('Playing...');
-                base.playerState = 'PLAYING';
+                if (base.getNumFrames()) {
 
-                //  Fire the event
-                base.options.onPlay.call(base);
+                    //  Set the state
+                    base.log('Playing...');
+                    base.playerState = 'PLAYING';
 
-                //  If any frames need loaded then continue loading
-                if (base.loaderState === 'STOPPED') {
-                    base.load();
-                }
+                    //  Fire the event
+                    base.options.onPlay.call(base);
 
-                /**
-                 * Check the buffer, if it's full enough then start playback immediately,
-                 * if not then begin to buffer some frames.
-                 */
+                    //  If any frames need loaded then continue loading
+                    if (base.loaderState === 'STOPPED') {
+                        base.load();
+                    }
 
-                if (!base.requiresBuffer()) {
+                    /**
+                     * Check the buffer, if it's full enough then start playback immediately,
+                     * if not then begin to buffer some frames.
+                     */
 
-                    base.doPlay();
+                    if (!base.requiresBuffer()) {
 
+                        base.doPlay();
+
+                    } else {
+
+                        base.buffer();
+                    }
                 } else {
-
-                    base.buffer();
+                    base.warn('No Frames to play');
                 }
             }
 
@@ -426,6 +440,12 @@ window.frameplayer.player = function(options) {
             var frameNumber = base.currentFrame;
 
             base.options.onEnterFrame.call(base, base.currentFrame);
+
+            //  Call the specific frame callback if exists
+            if (typeof base.options['onEnterFrame' + base.currentFrame] === 'function') {
+                base.options['onEnterFrame' + base.currentFrame].call(base, base.currentFrame);
+            }
+
             base.renderFrame(base.currentFrame);
 
             //  Update the scrubber to show which frame we're on
@@ -437,9 +457,15 @@ window.frameplayer.player = function(options) {
             //  Trigger the next frame
             var frameDelay = 1000/base.options.frameRate;
 
-            setTimeout(function() {
+            clearTimeout(base.playerTimeout);
+            base.playerTimeout = setTimeout(function() {
 
                 base.options.onExitFrame.call(base, base.currentFrame);
+
+                //  Call the specific frame callback if exists
+                if (typeof base.options['onExitFrame' + base.currentFrame] === 'function') {
+                    base.options['onExitFrame' + base.currentFrame].call(base, base.currentFrame);
+                }
 
                 if (typeof base.frames[base.currentFrame+1] === 'object') {
 
@@ -775,10 +801,10 @@ window.frameplayer.player = function(options) {
 
             base.currentFrame = 0;
 
-            if (!base.options.coverImg) {
-                base.goToFrame(0);
-            } else {
+            if (base.options.coverImg) {
                 base.renderUrl(base.options.coverImg);
+            } else if (frames.length) {
+                base.goToFrame(0);
             }
         }
 
@@ -811,6 +837,19 @@ window.frameplayer.player = function(options) {
     base.error = function() {
 
         $FP.debug.error('FP [Player]:', arguments);
+        return base;
+    };
+
+    // --------------------------------------------------------------------------
+
+    /**
+     * Sends an item to the error log, prefixing it with a string so that the class
+     * making the log is easily identifiable
+     * @return {Object}
+     */
+    base.warn = function() {
+
+        $FP.debug.warn('FP [Player]:', arguments);
         return base;
     };
 
