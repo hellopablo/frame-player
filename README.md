@@ -1,5 +1,7 @@
 # FramePlayer
 
+[![Join the chat at https://gitter.im/hellopablo/frameplayer](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/hellopablo/frameplayer?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 [![Project Status](http://stillmaintained.com/hellopablo/frameplayer.png)](https://stillmaintained.com/hellopablo/frameplayer)
 
 A simple JavaScript player for playing frame-based animations. [Demo](http://hellopablo.github.io/frameplayer)
