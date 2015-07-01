@@ -67,6 +67,13 @@ window.frameplayer.frame = function(frameUrl) {
             deferred.resolve();
         };
 
+        img.onerror = function() {
+
+            base.error('Failed to load frame; URL: ' + base.url);
+            base.loaded = true;
+            deferred.resolve();
+        };
+
         img.src = base.url;
 
         return deferred.promise();
