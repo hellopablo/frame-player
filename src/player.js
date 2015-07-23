@@ -26,7 +26,7 @@ window.frameplayer.player = function(options) {
      * @type {Object}
      */
     base.options = {
-        'frameRate': 12,
+        'frameRate': 24,
         'domElement': null,
         'canvasClass': '.canvas',
         'scrubberClass': '.scrubber',
@@ -36,6 +36,8 @@ window.frameplayer.player = function(options) {
         'debug': false,
         'autoPlay': false,
         'autoLoad': false,
+        'playerWidth': 700,
+        'playerHeight': 394,
         'frames': [],
 
         //  Events
@@ -196,18 +198,19 @@ window.frameplayer.player = function(options) {
         //  Create the canvas in the canvas element
         base.canvasContainer = base.element.find(base.options.canvasClass).first();
         base.canvas = document.createElement('canvas');
-        base.canvas.width = base.canvasContainer.width();
-        base.canvas.height = base.canvasContainer.height();
         base.canvasContext = base.canvas.getContext('2d');
 
         //  And the canvas img element
         base.canvasImg = document.createElement('img');
 
         //  Put the canvas inside the container
-        base.canvasContainer.append(base.canvas)
+        base.canvasContainer.append(base.canvas);
 
         //  Look for the scrubber
         base.scrubber = base.element.find(base.options.scrubberClass).first();
+
+        //  Size everything
+        base.setPlayerSize(base.options.playerWidth, base.options.playerHeight);
 
         // --------------------------------------------------------------------------
 
@@ -220,27 +223,13 @@ window.frameplayer.player = function(options) {
 
             //  Preload, if we don't then it doesn't show
             base.log('Rendering Cover Image: ' + base.options.coverImg);
-            base.canvasImg.src = base.options.coverImg;
-            base.canvasImg.onload = function() {
-
-                base.renderUrl(base.options.coverImg);
-
-                //  Reset onload event
-                base.canvasImg.onload = function() {};
-            }
+            base.renderUrl(base.options.coverImg);
 
         } else if (base.options.frames.length) {
 
             //  Preload, if we don't then it doesn't show
             base.log('Rendering Cover Image: First Frame');
-            base.canvasImg.src = base.options.frames[0];
-            base.canvasImg.onload = function() {
-
-                base.renderUrl(base.options.frames[0]);
-
-                //  Reset onload event
-                base.canvasImg.onload = function() {};
-            }
+            base.renderUrl(base.options.frames[0]);
 
         } else {
 
@@ -253,12 +242,16 @@ window.frameplayer.player = function(options) {
 
         if (base.frames.length && base.options.autoPlay) {
 
-            base.play();
+            base.playerState = 'PLAYING';
 
         } else if (base.frames.length && base.options.autoLoad) {
 
             base.load();
         }
+
+        // --------------------------------------------------------------------------
+
+        base.startAnimationLoop();
 
         // --------------------------------------------------------------------------
 
@@ -384,15 +377,38 @@ window.frameplayer.player = function(options) {
      */
     base.renderUrl = function(url) {
 
-        //  Size the canvas to the container
-        base.canvas.width = base.canvasContainer.width();
-        base.canvas.height = base.canvasContainer.height();
-
         //  Set the frame
+        base.canvasImg.onload = function() {
+
+            base.canvasContext.drawImage(base.canvasImg, 0, 0, base.canvas.width, base.canvas.height);
+        }
         base.canvasImg.src = url;
-        base.canvasContext.drawImage(base.canvasImg, 0, 0, base.canvas.width, base.canvas.height);
 
         return base;
+    };
+
+    // --------------------------------------------------------------------------
+
+    /**
+     * Sets the size of the player
+     * @param {Number} width  The width of the player
+     * @param {Number} height The height of the player
+     */
+    base.setPlayerSize = function(width, height) {
+
+        base.log('Setting player size: ' + width + 'x' + height);
+
+        //  Main player
+        base.element.width(width);
+        base.element.height(height);
+
+        //  Main container
+        base.canvasContainer.width(width);
+        base.canvasContainer.height(height);
+
+        //  Canvas
+        base.canvas.width = width;
+        base.canvas.height = height;
     };
 
     // --------------------------------------------------------------------------
@@ -459,14 +475,11 @@ window.frameplayer.player = function(options) {
                      * if not then begin to buffer some frames.
                      */
 
-                    if (!base.requiresBuffer()) {
-
-                        base.doPlay();
-
-                    } else {
+                    if (base.requiresBuffer()) {
 
                         base.buffer();
                     }
+
                 } else {
                     base.warn('No Frames to play');
                 }
@@ -486,78 +499,93 @@ window.frameplayer.player = function(options) {
      * Renders a frame and then sets up the next frame
      * @return {Object}
      */
-    base.doPlay = function() {
+    base.startAnimationLoop = function() {
 
-        if (base.playerState !== 'STOPPED') {
+        var totalFrames, frameDelay, timeOld, timeNew, timeDiff, percentagePlayed;
+        timeOld = Date.now();
 
-            if (base.currentFrame === null) {
-                base.currentFrame = 0;
-            }
+        processFrame = function() {
 
-            var frameNumber = base.currentFrame;
+            if (base.playerState === 'PLAYING') {
 
-            base.options.onEnterFrame.call(base, base.currentFrame);
+                totalFrames = base.frames.length-1;
+                frameDelay = 1000/base.options.frameRate;
 
-            //  Call the specific frame callback if exists
-            if (typeof base.options['onEnterFrame' + base.currentFrame] === 'function') {
-                base.options['onEnterFrame' + base.currentFrame].call(base, base.currentFrame);
-            }
+                //  Has enough time passed?
+                timeNew = Date.now();
+                timeDiff = timeNew - timeOld;
 
-            base.renderFrame(base.currentFrame);
+                if (timeDiff > frameDelay) {
 
-            //  Update the scrubber to show which frame we're on
-            var totalFrames      = base.frames.length-1;
-            var percentagePlayed = (base.currentFrame / totalFrames)*100;
+                    timeOld = timeNew - (timeDiff % frameDelay);
 
-            base.scrubber.find('.current').width(percentagePlayed + '%');
+                    //  Exit the existing frame, if there is one
+                    if (base.currentFrame !== null) {
 
-            //  Trigger the next frame
-            var frameDelay = 1000/base.options.frameRate;
+                        base.options.onExitFrame.call(base, base.currentFrame);
 
-            clearTimeout(base.playerTimeout);
-            base.playerTimeout = setTimeout(function() {
+                        //  Call the specific frame callback if exists
+                        if (typeof base.options['onExitFrame' + base.currentFrame] === 'function') {
+                            base.options['onExitFrame' + base.currentFrame].call(base, base.currentFrame);
+                        }
+                    }
 
-                base.options.onExitFrame.call(base, base.currentFrame);
+                    //  Enter the new frame
+                    //  Work out which frame we're entering
+                    if (base.currentFrame === null) {
 
-                //  Call the specific frame callback if exists
-                if (typeof base.options['onExitFrame' + base.currentFrame] === 'function') {
-                    base.options['onExitFrame' + base.currentFrame].call(base, base.currentFrame);
-                }
-
-                if (typeof base.frames[base.currentFrame+1] === 'object') {
-
-                    //  More frames, continue
-                    base.currentFrame++;
-
-                    //  But is the next frame loaded? If not then begin buffering
-                    if (!base.frames[base.currentFrame].isLoaded()) {
-
-                        base.buffer();
+                        base.currentFrame = 0;
 
                     } else {
 
-                        base.doPlay();
+                        base.currentFrame++
                     }
 
-                } else {
+                    //  Test this new frame exists
+                    if (typeof base.frames[base.currentFrame] === 'object') {
 
-                    //  No more frames
-                    base.currentFrame = 0;
-                    if (base.options.loop) {
+                        //  Frame exists, but is it loaded? If not then begin buffering
+                        if (!base.frames[base.currentFrame].isLoaded()) {
 
-                        base.options.onLoop.call(base);
-                        base.doPlay();
+                            base.buffer();
+                            window.requestAnimationFrame(processFrame);
+                            return;
+                        }
 
                     } else {
 
-                        base.stop();
+                        //  Doesn't exist, loop, or stop
+                        base.currentFrame = 0;
+                        if (base.options.loop) {
+
+                            base.options.onLoop.call(base);
+
+                        } else {
+
+                            base.stop();
+                        }
                     }
+
+                    base.options.onEnterFrame.call(base, base.currentFrame);
+
+                    //  Call the specific frame callback if exists
+                    if (typeof base.options['onEnterFrame' + base.currentFrame] === 'function') {
+                        base.options['onEnterFrame' + base.currentFrame].call(base, base.currentFrame);
+                    }
+
+                    //  Render the frame
+                    base.renderFrame(base.currentFrame);
+
+                    //  Update the scrubber
+                    percentagePlayed = (base.currentFrame / totalFrames)*100;
+                    base.scrubber.find('.current').width(percentagePlayed + '%');
                 }
+            }
 
-            }, frameDelay);
-        }
+            window.requestAnimationFrame(processFrame);
+        };
 
-        return base;
+        window.requestAnimationFrame(processFrame);
     };
 
     // --------------------------------------------------------------------------
@@ -611,7 +639,6 @@ window.frameplayer.player = function(options) {
 
                 //  Buffer has filled up, continue playback
                 base.bufferStop();
-                base.doPlay();
             }
 
         } else {
@@ -842,7 +869,6 @@ window.frameplayer.player = function(options) {
             base.options.coverImg = null;
             base.frames = [];
 
-            base.scrubber.find('.current').width('0%');
             base.scrubber.find('.loaded').width('0%');
 
             base.canvasContainer.removeAttr('style');
@@ -857,6 +883,8 @@ window.frameplayer.player = function(options) {
                 base.goToFrame(0);
             }
         }
+
+        base.scrubber.find('.current').width('0%');
 
         base.options.onReset.call(base);
         base.options.onReady.call(base);
