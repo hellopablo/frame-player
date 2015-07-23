@@ -102,13 +102,29 @@
             color: #CCC;
         }
         #player {
-            width: 600px;
-            height: 338px;
+            width: 700px;
+            height: 394px;
             padding: 0;
             position: relative;
             border-radius: 3px;
             overflow: hidden;
             box-shadow: 0px 0px 5px rgba(0,0,0,0.3);
+        }
+        #player .buffering {
+            display: none;
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height:100%;
+            background-color: rgba(255,255,255,0.7);
+            background-repeat: no-repeat;
+            background-position: center;
+            background-image: url(assets/img/buffering.gif);
+            background-size: 32px;
+        }
+        #player.buffering .buffering {
+            display: block;
         }
         #player .canvas {
             width: 100%;
@@ -187,6 +203,7 @@
     </div>
     <div id="player">
         <div class="canvas"></div>
+        <div class="buffering"></div>
         <div class="controls"></div>
         <div class="scrubber">
             <div class="loaded"></div>
@@ -246,6 +263,7 @@
     <div id="import">
         <p>
             Presets:
+            <button class="action" data-action="preset" data-source="minions">Minions</button>
             <button class="action" data-action="preset" data-source="bigben">Big Ben, London</button>
             <button class="action" data-action="preset" data-source="londoneye">London Eye, London</button>
             <button class="action" data-action="preset" data-source="royalmile">Royal Mile, Edinburgh</button>
@@ -263,8 +281,10 @@
 
         var player = new window.frameplayer.player({
             'domElement': '#player',
+            'frameRate': 24,
+            'loop': true,
             'coverImg': 'assets/img/coverImg.png',
-            'frames': window.frames.bigben,
+            'frames': window.frames.minions,
             'onReady': function() {
 
                 window.FP.debug.log('EVENT: onReady');
