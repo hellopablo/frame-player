@@ -214,7 +214,6 @@ window.frameplayer.player = function(options) {
         canvasClass: ".canvas",
         scrubberClass: ".scrubber",
         coverImg: null,
-        renderMode: "background",
         bufferSize: "30%",
         loop: false,
         debug: false,
@@ -283,7 +282,25 @@ window.frameplayer.player = function(options) {
      * The DOM element which contains the player canvas
      * @type {Object}
      */
+    base.canvasContainer = null;
+    // --------------------------------------------------------------------------
+    /**
+     * The actual canvas element
+     * @type {Object}
+     */
     base.canvas = null;
+    // --------------------------------------------------------------------------
+    /**
+     * The canvas context object
+     * @type {Object}
+     */
+    base.canvasContext = null;
+    // --------------------------------------------------------------------------
+    /**
+     * Containe an img element used for rendering the frame
+     * @type {Object}
+     */
+    base.canvasImg = null;
     // --------------------------------------------------------------------------
     /**
      * The DOM element which contains the player scrubber
@@ -317,18 +334,43 @@ window.frameplayer.player = function(options) {
         } else {
             base.element = $(base.options.domElement).first();
         }
-        //  Look for the canvas and the scrubber
-        base.canvas = base.element.find(base.options.canvasClass).first();
+        //  Create the canvas in the canvas element
+        base.canvasContainer = base.element.find(base.options.canvasClass).first();
+        base.canvas = document.createElement("canvas");
+        base.canvas.width = base.canvasContainer.width();
+        base.canvas.height = base.canvasContainer.height();
+        base.canvasContext = base.canvas.getContext("2d");
+        //  And the canvas img element
+        base.canvasImg = document.createElement("img");
+        //  Put the canvas inside the container
+        base.canvasContainer.append(base.canvas);
+        //  Look for the scrubber
         base.scrubber = base.element.find(base.options.scrubberClass).first();
         // --------------------------------------------------------------------------
         //  Player is ready
         base.ready = true;
         base.playerState = "STOPPED";
+        //  Render the cover image
         if (base.options.coverImg) {
+            //  Preload, if we don't then it doesn't show
             base.log("Rendering Cover Image: " + base.options.coverImg);
-            base.renderUrl(base.options.coverImg);
-        } else if (frames.length) {
-            base.goToFrame(0);
+            base.canvasImg.src = base.options.coverImg;
+            base.canvasImg.onload = function() {
+                base.renderUrl(base.options.coverImg);
+                //  Reset onload event
+                base.canvasImg.onload = function() {};
+            };
+        } else if (base.options.frames.length) {
+            //  Preload, if we don't then it doesn't show
+            base.log("Rendering Cover Image: First Frame");
+            base.canvasImg.src = base.options.frames[0];
+            base.canvasImg.onload = function() {
+                base.renderUrl(base.options.frames[0]);
+                //  Reset onload event
+                base.canvasImg.onload = function() {};
+            };
+        } else {
+            base.log("No Cover Image to render");
         }
         base.options.onReady.call(base);
         // --------------------------------------------------------------------------
@@ -429,13 +471,12 @@ window.frameplayer.player = function(options) {
      * @return {Object}
      */
     base.renderUrl = function(url) {
-        if (base.options.renderMode === "background") {
-            base.canvas.css("background-image", "url(" + url + ")");
-        } else if (base.options.renderMode === "img") {
-            base.canvas.html('<img src="' + url + '">');
-        } else {
-            base.error("Invalid Render Mode (" + base.options.renderMode + ")");
-        }
+        //  Size the canvas to the container
+        base.canvas.width = base.canvasContainer.width();
+        base.canvas.height = base.canvasContainer.height();
+        //  Set the frame
+        base.canvasImg.src = url;
+        base.canvasContext.drawImage(base.canvasImg, 0, 0, base.canvas.width, base.canvas.height);
         return base;
     };
     // --------------------------------------------------------------------------
@@ -761,11 +802,7 @@ window.frameplayer.player = function(options) {
             base.frames = [];
             base.scrubber.find(".current").width("0%");
             base.scrubber.find(".loaded").width("0%");
-            if (base.options.renderMode === "background") {
-                base.canvas.removeAttr("style");
-            } else if (base.options.renderMode === "img") {
-                base.canvas.empty();
-            }
+            base.canvasContainer.removeAttr("style");
         } else {
             base.currentFrame = 0;
             if (base.options.coverImg) {
