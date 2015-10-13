@@ -2,7 +2,7 @@
   "name": "frameplayer",
   "description": "A simple JavaScript player for playing frame-based animations.",
   "license": "MIT",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "author": "Pablo de la Peña <p@shedcollective.org>",
   "repository": {
     "type": "git",
