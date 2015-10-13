@@ -50,6 +50,7 @@ window.frameplayer.player = function(options) {
         'onBufferStart': function() {},
         'onBufferStop': function() {},
         'onStop': function() {},
+        'onFinish': function() {},
         'onEnterFrame': function(currentFrame) {},
         'onExitFrame': function(currentFrame) {},
         'onLoop': function() {},
@@ -556,6 +557,7 @@ window.frameplayer.player = function(options) {
 
                         //  Doesn't exist, loop, or stop
                         base.currentFrame = 0;
+                        base.options.onFinish.call();
                         if (base.options.loop) {
 
                             base.options.onLoop.call(base);
